@@ -11,10 +11,11 @@ COPY . .
 
 # Installe les dépendances nécessaires
 RUN pip install --no-cache-dir flask
+RUN pip install pymongo
+
 
 # Définit la commande à exécuter pour démarrer l'application
 CMD ["python", "app.py"]
 
 # Expose le port 5000 (par défaut pour Flask)
 EXPOSE 5000
-    

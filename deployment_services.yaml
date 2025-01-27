@@ -1,0 +1,176 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:latest
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+          ports:
+            - containerPort: 27017
+          livenessProbe:  
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 30
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-service
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  selector:
+    app: mongodb
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webdb
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: webdb
+  template:
+    metadata:
+      labels:
+        app: webdb
+    spec:
+      containers:
+        - name: webdb
+          image: pomelo971/app:v3
+          resources:
+            requests:
+              memory: "100Mi"
+              cpu: "100m"
+            limits:
+              memory: "200Mi"
+              cpu: "200m"
+          ports:
+            - containerPort: 5000
+          env:
+            - name: MONGO_URI
+              value: "mongodb://mongodb-service:27017/mydatabase"  # URI pour MongoDB
+          livenessProbe: 
+            httpGet:
+              path: / 
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webdb-service
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  selector:
+    app: webdb
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webnodb
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  replicas: 1  # Instance unique (aucune réplication)
+  selector:
+    matchLabels:
+      app: webnodb
+  template:
+    metadata:
+      labels:
+        app: webnodb
+    spec:
+      containers:
+      - name: webnodb-container
+        image: pomelo971/app2:v1  # Utilise l'image spécifiée
+        ports:  
+        - containerPort: 5000  # Expose le port 5000 du container
+        resources:
+            requests:
+              memory: "100Mi"  # Demande 100 MiB de mémoire par pod
+              cpu: "100m"      # Demande 1/10 CPU par pod
+            limits:
+              memory: "200Mi"  # Limite mémoire à 200 MiB par pod
+              cpu: "200m"      # Limite CPU à 1/5 CPU par pod
+        livenessProbe: 
+            httpGet:
+              path: /  
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webnodb-service
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  selector:
+    app: webnodb
+  ports:
+    - protocol: TCP
+      port: 80  # Port exposé par le service
+      targetPort: 5000  # Redirige le trafic vers le port 5000 du container
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alefevre-ingress  # Name of the Ingress
+  namespace: alefevre     # Namespace for the Ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /  # Rewrite requests to root path
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"  # Disable HTTPS redirection
+spec:
+  rules:
+  - host: webnodb.alefevre.net4255.luxbulb.org  # URL for webnodb
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webnodb-service  # Service for the webnodb deployment
+            port:
+              number: 80
+  - host: webdb.alefevre.net4255.luxbulb.org  # URL for webdb
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: webdb-service  # Service for the webdb deployment
+            port:
+              number: 80

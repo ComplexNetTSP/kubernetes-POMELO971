@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webnodb
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webnodb
+  template:
+    metadata:
+      labels:
+        app: webnodb
+    spec:
+      containers:
+      - name: webnodb
+        image: {{ .Values.webnodb.image }}
+        resources:
+          requests:
+            memory: {{ .Values.webnodb.resources.requests.memory }}
+            cpu: {{ .Values.webnodb.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.webnodb.resources.limits.memory }}
+            cpu: {{ .Values.webnodb.resources.limits.cpu }}
+        ports:
+        - containerPort: {{ .Values.webnodb.port }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.webnodb.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 5

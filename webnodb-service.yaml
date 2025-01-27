@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webnodb-service
+  namespace: alefevre  # Make sure to use your actual namespace
+spec:
+  selector:
+    app: webnodb  # This matches the label from your deployment
+  ports:
+    - protocol: TCP
+      port: 5000  # Expose port 5000, adjust if necessary
+      targetPort: 5000  # Adjust if necessary
+  type: ClusterIP  # You can change to LoadBalancer or NodePort based on your needs

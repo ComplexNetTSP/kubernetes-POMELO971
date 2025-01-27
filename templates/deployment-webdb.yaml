@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webdb
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.webdb.replicas }}
+  selector:
+    matchLabels:
+      app: webdb
+  template:
+    metadata:
+      labels:
+        app: webdb
+    spec:
+      containers:
+      - name: webdb
+        image: {{ .Values.webdb.image }}
+        env:
+        - name: MONGO_URI
+          value: "mongodb://{{ .Values.namespace }}.svc.cluster.local:{{ .Values.mongodb.port }}"
+        resources:
+          requests:
+            memory: {{ .Values.webdb.resources.requests.memory }}
+            cpu: {{ .Values.webdb.resources.requests.cpu }}
+          limits:
+            memory: {{ .Values.webdb.resources.limits.memory }}
+            cpu: {{ .Values.webdb.resources.limits.cpu }}
+        ports:
+        - containerPort: {{ .Values.webdb.port }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: {{ .Values.webdb.port }}
+          initialDelaySeconds: 10
+          periodSeconds: 5

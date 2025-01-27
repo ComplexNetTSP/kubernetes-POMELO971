@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webnodb
+  namespace: alefevre  # Spécifie le namespace ici
+spec:
+  replicas: 1  # Instance unique (aucune réplication)
+  selector:
+    matchLabels:
+      app: webnodb
+  template:
+    metadata:
+      labels:
+        app: webnodb
+    spec:
+      containers:
+      - name: webnodb-container
+        image: pomelo971/app2:v1  # Utilise l'image spécifiée
+        ports:  
+        - containerPort: 5000  # Expose le port 5000 du container
+        resources:
+            requests:
+              memory: "100Mi"  # Demande 100 MiB de mémoire par pod
+              cpu: "100m"      # Demande 1/10 CPU par pod
+            limits:
+              memory: "200Mi"  # Limite mémoire à 200 MiB par pod
+              cpu: "200m"      # Limite CPU à 1/5 CPU par pod
+        livenessProbe: 
+            httpGet:
+              path: /  # Vérifie que l'application répond à la racine
+              port: 5000
+            initialDelaySeconds: 10  # Délai initial avant la première vérification
+            periodSeconds: 5  # Fréquence des vérifications
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webnodb-service  # Nouveau nom pour le service
+  namespace: alefevre  # Même namespace que le déploiement
+spec:
+  selector:
+    app: webnodb  # Relie le service au déploiement "webnodb"
+  ports:
+    - protocol: TCP
+      port: 80  # Nouveau : Port exposé par le service
+      targetPort: 5000  # Nouveau : Redirige le trafic vers le port 5000 du container
+  type: ClusterIP  # Nouveau : Service interne pour l'accès via Ingress
