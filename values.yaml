@@ -5,11 +5,15 @@ mongodb:
   port: 27017
   resources:
     requests:
-      memory: "100Mi"
+      memory: "100Mi"  # Increase the memory request
       cpu: "100m"
     limits:
-      memory: "200Mi"
+      memory: "200Mi"  # Increase the memory limit
       cpu: "200m"
+  storage:
+    size: "1Gi"
+  storageClass: longhorn
+
 
 webdb:
   image: pomelo971/app:v3

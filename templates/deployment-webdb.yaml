@@ -18,7 +18,7 @@ spec:
         image: {{ .Values.webdb.image }}
         env:
         - name: MONGO_URI
-          value: "mongodb://{{ .Values.namespace }}.svc.cluster.local:{{ .Values.mongodb.port }}"
+          value: "mongodb://mongo-0.mongodb-headless.{{ .Values.namespace }}.svc.cluster.local:{{ .Values.mongodb.port }}"
         resources:
           requests:
             memory: {{ .Values.webdb.resources.requests.memory }}

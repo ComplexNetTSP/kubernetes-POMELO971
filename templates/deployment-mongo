@@ -1,9 +1,10 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mongodb
   namespace: {{ .Values.namespace }}
 spec:
+  serviceName: mongodb-headless
   replicas: 1
   selector:
     matchLabels:
@@ -25,8 +26,19 @@ spec:
             cpu: {{ .Values.mongodb.resources.limits.cpu }}
         ports:
         - containerPort: {{ .Values.mongodb.port }}
+        volumeMounts:
+        - name: mongodb-storage
+          mountPath: /data/db
         livenessProbe:
           tcpSocket:
             port: {{ .Values.mongodb.port }}
           initialDelaySeconds: 30
           periodSeconds: 10
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: {{ .Values.mongodb.storage.size }}
